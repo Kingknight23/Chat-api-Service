@@ -1,101 +1,138 @@
 import Broadcast from "../models/Broadcast.js";
-import {sendToUser} from "../websocket/connection.manager.js";
+import BroadcastRead from "../models/BroadcastRead.js";
+import { sendToUser } from "../websocket/connection.manager.js";
 
-
-const getBroadcasts = async (
-    limit = 50,
-    before = null
-) => {
-
+const getBroadcasts = async (limit = 50, before = null) => {
     const query = {};
 
     if (before) {
-
-        const beforeBroadcast =
-            await Broadcast.findById(
-                before
-            );
+        const beforeBroadcast = await Broadcast.findById(before);
 
         if (!beforeBroadcast) {
-            throw new Error(
-                "Broadcast not found"
-            );
+            throw new Error("Broadcast not found");
         }
 
         query.createdAt = {
-            $lt:
-                beforeBroadcast.createdAt
+            $lt: beforeBroadcast.createdAt
         };
     }
 
-
-    const broadcasts =
-        await Broadcast.find(query)
-            .sort({
-                createdAt: -1
-            })
-            .limit(
-                Number(limit)
-            );
-
+    const broadcasts = await Broadcast.find(query)
+        .sort({ createdAt: -1 })
+        .limit(Number(limit));
 
     return broadcasts.reverse();
 };
 
-
-const sendRecentBroadcasts = async (
-    userId
+const getUnreadBroadcasts = async (
+    userId,
+    limit = 20
 ) => {
+    const broadcasts = await Broadcast.find()
+        .sort({ createdAt: -1 })
+        .limit(Number(limit));
 
-    const broadcasts =
-        await Broadcast.find()
-            .sort({
-                createdAt: -1
-            })
-            .limit(20);
+    const broadcastIds = broadcasts.map(
+        (broadcast) => broadcast._id
+    );
 
+    const readBroadcasts = await BroadcastRead.find({
+        userId,
+        broadcastId: {
+            $in: broadcastIds
+        }
+    });
 
-    /*
-     * Send oldest → newest.
-     */
+    const readIds = new Set(
+        readBroadcasts.map(
+            (read) => read.broadcastId.toString()
+        )
+    );
 
-    broadcasts.reverse();
+    return broadcasts
+        .filter(
+            (broadcast) =>
+                !readIds.has(broadcast._id.toString())
+        )
+        .reverse();
+};
 
+const getUnreadBroadcastCount = async (userId) => {
+    const broadcasts = await Broadcast.find()
+        .select("_id");
 
-    for (
-        const broadcast
-        of broadcasts
-    ) {
+    if (broadcasts.length === 0) {
+        return 0;
+    }
 
-        sendToUser(
-            userId,
-            {
-                type:
-                    "admin.broadcast",
+    const broadcastIds = broadcasts.map(
+        (broadcast) => broadcast._id
+    );
 
-                data: {
-                    broadcastId:
-                        broadcast._id,
+    const readCount = await BroadcastRead.countDocuments({
+        userId,
+        broadcastId: {
+            $in: broadcastIds
+        }
+    });
 
-                    payloadType:
-                        broadcast.payloadType,
+    return broadcasts.length - readCount;
+};
 
-                    payload:
-                        broadcast.payload,
+const sendRecentBroadcasts = async (userId) => {
+    const broadcasts = await getUnreadBroadcasts(
+        userId,
+        20
+    );
 
-                    sentBy:
-                        broadcast.senderId,
+    const unreadCount =
+        await getUnreadBroadcastCount(userId);
 
-                    createdAt:
-                        broadcast.createdAt
-                }
+    for (const broadcast of broadcasts) {
+        sendToUser(userId, {
+            type: "admin.broadcast",
+            data: {
+                broadcastId: broadcast._id,
+                payloadType: broadcast.payloadType,
+                payload: broadcast.payload,
+                sentBy: broadcast.senderId,
+                createdAt: broadcast.createdAt,
+                unreadCount
             }
-        );
+        });
     }
 };
 
+const markBroadcastRead = async (
+    userId,
+    broadcastId
+) => {
+    const broadcast = await Broadcast.findById(
+        broadcastId
+    );
+
+    if (!broadcast) {
+        throw new Error("Broadcast not found");
+    }
+
+    try {
+        await BroadcastRead.create({
+            broadcastId,
+            userId
+        });
+    } catch (error) {
+        if (error.code !== 11000) {
+            throw error;
+        }
+    }
+
+    return true;
+};
 
 export {
     getBroadcasts,
-    sendRecentBroadcasts
+    getUnreadBroadcasts,
+    getUnreadBroadcastCount,
+    sendRecentBroadcasts,
+    markBroadcastRead
 };

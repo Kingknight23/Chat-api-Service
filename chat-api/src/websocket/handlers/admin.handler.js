@@ -1,27 +1,18 @@
 import Broadcast from "../../models/Broadcast.js";
 
-import {broadcastToAll} from "../connection.manager.js";
+import {getUnreadBroadcastCount} from "../../services/broadcast.service.js";
 
+import {sendToUser,getOnlineUserIds} from "../connection.manager.js";
 
 const handleAdminBroadcast = async (
     socket,
     message
 ) => {
-
-    /*
-     * Only administrators can
-     * create broadcasts.
-     */
-
     if (
         !socket.user.roles ||
-        !socket.user.roles.includes(
-            "ADMIN"
-        )
+        !socket.user.roles.includes("ADMIN")
     ) {
-        throw new Error(
-            "Admin permission required"
-        );
+        throw new Error("Admin permission required");
     }
 
     const {
@@ -41,71 +32,42 @@ const handleAdminBroadcast = async (
         );
     }
 
+    const broadcast = await Broadcast.create({
+        senderId: socket.user.userId,
+        payloadType,
+        payload
+    });
 
-    /*
-     * Save the broadcast first.
-     */
+    const onlineUserIds =
+        getOnlineUserIds();
 
-    const broadcast =
-        await Broadcast.create({
-            senderId:
-                socket.user.userId,
+    for (const userId of onlineUserIds) {
+        const unreadCount =
+            await getUnreadBroadcastCount(
+                userId
+            );
 
-            payloadType,
-
-            payload
-        });
-
-
-    /*
-     * Send it to every currently
-     * connected user.
-     */
-
-    broadcastToAll(
-        {
-            type:
-                "admin.broadcast",
-
+        sendToUser(userId, {
+            type: "admin.broadcast",
             data: {
-                broadcastId:
-                    broadcast._id,
-
+                broadcastId: broadcast._id,
                 payloadType,
-
                 payload,
-
-                sentBy:
-                    socket.user.userId,
-
-                createdAt:
-                    broadcast.createdAt
+                sentBy: socket.user.userId,
+                createdAt: broadcast.createdAt,
+                unreadCount
             }
+        });
+    }
+
+    socket.send(JSON.stringify({
+        type: "admin.broadcast.confirmed",
+        data: {
+            broadcastId: broadcast._id,
+            createdAt: broadcast.createdAt
         }
-    );
-
-
-    /*
-     * Confirm to the admin that
-     * the broadcast was saved.
-     */
-
-    socket.send(
-        JSON.stringify({
-            type:
-                "admin.broadcast.confirmed",
-
-            data: {
-                broadcastId:
-                    broadcast._id,
-
-                createdAt:
-                    broadcast.createdAt
-            }
-        })
-    );
+    }));
 };
-
 
 export {
     handleAdminBroadcast

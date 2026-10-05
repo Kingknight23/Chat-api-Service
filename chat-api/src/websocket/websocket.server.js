@@ -109,9 +109,16 @@ const setupWebSocket = (server) => {
             })
         );
 
-        await sendRecentBroadcasts(
-            socket.user.userId
-        );
+        try {
+            await sendRecentBroadcasts(
+                socket.user.userId
+            );
+        } catch (error) {
+            console.error(
+                "Could not send unread broadcasts:",
+                error.message
+            );
+        }
 
         socket.on("message", async (rawMessage) => {
             try {

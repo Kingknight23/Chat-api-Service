@@ -4,6 +4,7 @@ import {handlePresence} from "./handlers/presence.handler.js";
 import {handleMarkRead} from "./handlers/read.handler.js";
 import {handleTypingStart,handleTypingStop} from "./handlers/typing.handler.js";
 import {handleAdminBroadcast} from "./handlers/admin.handler.js";
+import {handleBroadcastRead} from "./handlers/broadcast.handler.js";
 
 const routeMessage = async (socket, message) => {
     try {
@@ -43,6 +44,9 @@ const routeMessage = async (socket, message) => {
             case "admin.broadcast":
                 await handleAdminBroadcast(socket,message);
 
+                break;
+            case "admin.broadcast.read":
+                await handleBroadcastRead(socket, message);
                 break;
 
             default:
