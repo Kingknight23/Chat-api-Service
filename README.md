@@ -13,7 +13,7 @@ The Chat API provides the backend infrastructure for a WhatsApp-like messaging a
 * 👥 Group conversations
 * 📢 Admin/system broadcasts
 * ⚡ Real-time communication using WebSocket
-* 🔒 RSA-based message encryption
+* 🔒 AES + RSA-based message encryption
 * 📨 Message delivery and read status
 * 🟢 Online/offline presence
 * ✍️ Typing indicators
@@ -29,7 +29,7 @@ The Chat API provides the backend infrastructure for a WhatsApp-like messaging a
 ## Architecture
 
 The project follows a layered backend architecture:
-
+TBD
 
 
 ### REST API
