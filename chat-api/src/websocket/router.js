@@ -1,18 +1,17 @@
-import {
-    handleSendMessage
-} from "./handlers/message.handler.js";
-
-import {
-    handleSubscribe,
-    handleUnsubscribe
-} from "./handlers/conversation.handler.js";
-
-import {
-    handlePresence
-} from "./handlers/presence.handler.js";
+import {handleSendMessage} from "./handlers/message.handler.js";
+import {handleSubscribe,handleUnsubscribe} from "./handlers/conversation.handler.js";
+import {handlePresence} from "./handlers/presence.handler.js";
+import {handleMarkRead} from "./handlers/read.handler.js";
+import {handleTypingStart,handleTypingStop} from "./handlers/typing.handler.js";
+import {handleAdminBroadcast} from "./handlers/admin.handler.js";
 
 const routeMessage = async (socket, message) => {
     try {
+        console.log(
+            "WebSocket event received:",
+            message.type
+        );
+
         switch (message.type) {
             case "message.send":
                 await handleSendMessage(socket, message);
@@ -28,6 +27,22 @@ const routeMessage = async (socket, message) => {
 
             case "presence.update":
                 await handlePresence(socket, message);
+                break;
+            case "message.read":
+                await handleMarkRead(socket,message);
+                break;
+
+            case "typing.start":
+                await handleTypingStart(socket,message);
+                break;
+
+            case "typing.stop":
+                await handleTypingStop(socket,message);
+                break;
+
+            case "admin.broadcast":
+                await handleAdminBroadcast(socket,message);
+
                 break;
 
             default:

@@ -11,7 +11,10 @@ import {
 } from "../../services/encryption.service.js";
 
 import {
-    broadcastToUsers,
+    markMessageDelivered
+} from "../../services/message-status.service.js";
+
+import {
     sendToUser
 } from "../connection.manager.js";
 
@@ -20,6 +23,7 @@ const handleSendMessage = async (
     socket,
     message
 ) => {
+
     const {
         conversationId,
         payloadType,
@@ -44,13 +48,17 @@ const handleSendMessage = async (
         );
     }
 
+
     /*
-     * Verify sender membership.
+     * Make sure sender belongs
+     * to the conversation.
      */
+
     const member =
         await ConversationMember.findOne({
             conversationId,
-            userId: socket.user.userId
+            userId:
+                socket.user.userId
         });
 
     if (!member) {
@@ -59,28 +67,44 @@ const handleSendMessage = async (
         );
     }
 
+
     /*
      * Validate payload.
      */
+
     const validatedPayload =
         validatePayload(
             payloadType,
             payload
         );
 
-    let messageType = "CUSTOM";
-
-    if (payloadType === "text") {
-        messageType = "TEXT";
-    }
-
-    if (payloadType === "image") {
-        messageType = "IMAGE";
-    }
 
     /*
-     * Get conversation members.
+     * Determine message type.
      */
+
+    let messageType =
+        "CUSTOM";
+
+    if (
+        payloadType === "text"
+    ) {
+        messageType =
+            "TEXT";
+    }
+
+    if (
+        payloadType === "image"
+    ) {
+        messageType =
+            "IMAGE";
+    }
+
+
+    /*
+     * Get all conversation members.
+     */
+
     const members =
         await ConversationMember.find({
             conversationId
@@ -92,18 +116,23 @@ const handleSendMessage = async (
                 member.userId
         );
 
+
     /*
-     * Encrypt the message.
+     * Encrypt message separately
+     * for every conversation member.
      */
+
     const encryptedPayload =
         await encryptMessageForUsers(
             validatedPayload,
             userIds
         );
 
+
     /*
-     * Store encrypted message.
+     * Save encrypted message.
      */
+
     const newMessage =
         await Message.create({
             conversationId,
@@ -119,19 +148,23 @@ const handleSendMessage = async (
                 encryptedPayload
         });
 
+
     /*
-     * Send the message individually
-     * to each online conversation member.
+     * Send message to every member.
      */
+
     for (
         const userId of userIds
     ) {
+
         try {
+
             const decryptedPayload =
                 await decryptMessageForUser(
                     encryptedPayload,
                     userId
                 );
+
 
             sendToUser(
                 userId,
@@ -160,9 +193,29 @@ const handleSendMessage = async (
                     }
                 }
             );
+
+
+            /*
+             * Sender doesn't need
+             * a delivered notification
+             * for their own message.
+             */
+
+            if (
+                userId !==
+                socket.user.userId
+            ) {
+
+                await markMessageDelivered(
+                    userId,
+                    newMessage._id
+                );
+            }
+
         } catch (error) {
+
             console.error(
-                `Could not decrypt message for ${userId}:`,
+                `Could not deliver message to ${userId}:`,
                 error.message
             );
         }

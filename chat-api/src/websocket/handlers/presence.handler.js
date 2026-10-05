@@ -1,25 +1,36 @@
-import {
-    sendToUser,
-    isUserOnline
-} from "../connection.manager.js";
+import {isUserOnline} from "../connection.manager.js";
 
-const handlePresence = async (socket, message) => {
-    const { userId } = message.data;
+
+const handlePresence = async (
+    socket,
+    message
+) => {
+
+    const {
+        userId
+    } = message.data || {};
 
     if (!userId) {
-        throw new Error("userId is required");
+        throw new Error(
+            "userId is required"
+        );
     }
 
     socket.send(
         JSON.stringify({
-            type: "presence.status",
+            type:
+                "presence.status",
+
             data: {
                 userId,
-                online: isUserOnline(userId)
+
+                online:
+                    isUserOnline(userId)
             }
         })
     );
 };
+
 
 export {
     handlePresence

@@ -1,48 +1,69 @@
 import mongoose from "mongoose";
 
-const messageSchema = new mongoose.Schema(
-    {
-        conversationId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Conversation",
-            required: true,
-            index: true
-        },
+const messageSchema =
+    new mongoose.Schema(
+        {
+            conversationId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Conversation",
+                required: true,
+                index: true
+            },
 
-        senderId: {
-            type: String,
-            required: true
-        },
+            senderId: {
+                type: String,
+                required: true
+            },
 
-        messageType: {
-            type: String,
-            enum: ["TEXT", "IMAGE", "FILE", "CUSTOM"],
-            default: "TEXT"
-        },
+            messageType: {
+                type: String,
+                enum: [
+                    "TEXT",
+                    "IMAGE",
+                    "FILE",
+                    "CUSTOM"
+                ],
+                default: "TEXT"
+            },
 
-        payloadType: {
-            type: String,
-            required: true
-        },
+            payloadType: {
+                type: String,
+                required: true
+            },
 
-        payload: {
-            type: mongoose.Schema.Types.Mixed,
-            required: true
+            payload: {
+                type: mongoose.Schema.Types.Mixed,
+                required: true
+            },
+
+            deliveredTo: [
+                {
+                    userId: {
+                        type: String,
+                        required: true
+                    },
+
+                    deliveredAt: {
+                        type: Date,
+                        default: Date.now
+                    }
+                }
+            ]
+        },
+        {
+            timestamps: true
         }
-    },
-    {
-        timestamps: true
-    }
-);
+    );
 
 messageSchema.index({
     conversationId: 1,
     createdAt: -1
 });
 
-const Message = mongoose.model(
-    "Message",
-    messageSchema
-);
+const Message =
+    mongoose.model(
+        "Message",
+        messageSchema
+    );
 
 export default Message;

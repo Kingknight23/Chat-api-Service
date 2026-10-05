@@ -88,12 +88,36 @@ const broadcastToUsers = (
     }
 };
 
+const broadcastToAll = (
+    message
+) => {
+
+    for (
+        const userId
+        of connections.keys()
+    ) {
+
+        sendToUser(
+            userId,
+            message
+        );
+    }
+};
+
+const getOnlineUserIds = () => {
+    return [
+        ...connections.keys()
+    ];
+};
+
 
 export {
     addConnection,
     removeConnection,
     getConnections,
     isUserOnline,
+    getOnlineUserIds,
     sendToUser,
-    broadcastToUsers
+    broadcastToUsers,
+    broadcastToAll
 };
