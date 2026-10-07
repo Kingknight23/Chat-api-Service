@@ -1,0 +1,37 @@
+@media (max-width: 850px) {
+    .chat-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    .dashboard-header {
+        gap: 10px;
+    }
+}
+
+@media (max-width: 500px) {
+    .chat-dashboard {
+        padding: 10px;
+    }
+
+    .auth-card {
+        padding: 25px;
+    }
+
+    .message-bubble {
+        max-width: 85%;
+    }
+
+    .message-form {
+        padding: 10px;
+    }
+
+    .message-form button {
+        padding-left: 12px;
+
+        padding-right: 12px;
+    }
+}

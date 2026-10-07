@@ -1,0 +1,7 @@
+Attach these AWS managed permissions to the EC2 instance role:
+
+- AmazonSSMManagedInstanceCore
+- s3:GetObject for arn:aws:s3:::<DEPLOY_BUCKET>/releases/*
+
+Prefer a dedicated custom S3 policy rather than granting broad S3 access.
+The EC2 instance should not need s3:PutObject or general S3 access.

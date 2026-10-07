@@ -4,6 +4,12 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import env from "../config/env.js";
 
+const createAuthError = (message, statusCode) => {
+    const error = new Error(message);
+    error.statusCode = statusCode;
+    return error;
+};
+
 const generateToken = (user) => {
     return jwt.sign(
         {
@@ -24,14 +30,16 @@ const registerUser = async (
     password
 ) => {
     if (!username || !email || !password) {
-        throw new Error(
-            "Username, email and password are required"
+        throw createAuthError(
+            "Username, email and password are required",
+            400
         );
     }
 
     if (password.length < 8) {
-        throw new Error(
-            "Password must be at least 8 characters"
+        throw createAuthError(
+            "Password must be at least 8 characters",
+            400
         );
     }
 
@@ -43,8 +51,9 @@ const registerUser = async (
     });
 
     if (existingUser) {
-        throw new Error(
-            "Username or email is already registered"
+        throw createAuthError(
+            "Username or email is already registered",
+            409
         );
     }
 
@@ -84,8 +93,9 @@ const loginUser = async (
     });
 
     if (!user) {
-        throw new Error(
-            "Invalid email or password"
+        throw createAuthError(
+            "Invalid email or password",
+            401
         );
     }
 
@@ -96,8 +106,9 @@ const loginUser = async (
         );
 
     if (!passwordMatches) {
-        throw new Error(
-            "Invalid email or password"
+        throw createAuthError(
+            "Invalid email or password",
+            401
         );
     }
 

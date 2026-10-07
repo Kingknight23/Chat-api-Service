@@ -1,322 +1,183 @@
 # Chat Application
 
-A real-time chat application built with React, Node.js, Express, MongoDB, and native WebSockets.
+A real-time React + Node.js chat application using MongoDB and WebSockets. It supports direct messages, groups, friend requests, presence, typing indicators, delivery/read status, group administration, profile/group pictures, browser-side E2EE, and an AWS/GitHub Actions deployment pipeline.
 
-## Features
+## Stack
 
-- User registration and login with JWT authentication
-- One-to-one and group messaging
-- Friend requests and user search
-- Real-time presence and typing indicators
-- Message delivery and read status
-- Administrator broadcasts with read tracking
-- Group administration (create, rename, delete, manage members/admins)
-- User and group profile pictures
-- Browser-side end-to-end encryption (RSA-OAEP + AES-256-GCM)
-- WebSocket heartbeat/liveness checks
-- Conversation history
-- Client-side read caching
-- REST API and real-time WebSocket events
-- Optional HTTPS/WSS support
+- React + Vite
+- Node.js + Express
+- MongoDB + Mongoose
+- WebSocket (`ws`)
+- JWT + bcrypt
+- Web Crypto API for E2EE
+- Nginx + systemd on AWS EC2
+- GitHub Actions + AWS OIDC + S3 + Systems Manager
 
-## Architecture
+## Project structure
+
 ```text
-React
-  |
-  +--------------------+
-  |                    |
-  v                    v
-REST API          WebSocket Client
-  |                    |
-  |                    |
-  v                    v
-Express            WebSocket Server
-  |                    |
-  +---------+----------+
-            |
-            v
-        MongoDB
+.github/workflows/       CI and AWS deployment workflows
+aws/                     AWS IAM/EC2 deployment notes and bootstrap
+deploy/                  Nginx, systemd, and deployment scripts
+chat-api/                Express/WebSocket backend
+client/                  React/Vite frontend
+E2EE.md                  E2EE design notes
+SECURITY.md              Security notes and limitations
 ```
 
-The browser performs message encryption/decryption before sending data to the server.
+## Local development
 
-## Project Structure
-```text
-chat-app/
-├── client/                 # React frontend (Vite)
-│   └── src/
-│       ├── api/            # REST API client
-│       ├── components/     # UI components
-│       ├── context/        # ChatContext
-│       ├── pages/          # Login, Register, Chat
-│       ├── utils/          # auth, e2ee, storage, formatDate
-│       └── websocket/      # WebSocket client
-│
-├── chat-api/               # Node.js/Express backend
-│   └── src/
-│       ├── config/
-│       ├── controllers/
-│       ├── middleware/
-│       ├── models/
-│       ├── payloads/
-│       ├── routes/
-│       ├── services/
-│       ├── websocket/
-│       ├── app.js
-│       └── server.js
-│
-├── E2EE.md
-└── README.md
-```
+### Backend
 
-
-## Technologies
-
-**Frontend:** React, Vite, Web Crypto API, Native WebSocket API
-
-**Backend:** Node.js, Express, MongoDB, Mongoose, ws, JWT, bcrypt, Helmet, CORS, Morgan, dotenv, Nodemon
-
-## Installation
-
-```bash
-git clone <repository-url>
-cd chat-app
-```
-
-Backend:
 ```bash
 cd chat-api
-npm install
-```
-Frontend:
-```bash
-cd ../client
-npm install
-```
-## Environment Variables
-Backend (`chat-api/.env`):
- ```env
-PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/chat-api
-NODE_ENV=development
-JWT_SECRET=YOUR_JWT_SECRET
-KEY_ENCRYPTION_SECRET=YOUR_KEY_ENCRYPTION_SECRET
-ADMIN_EMAIL=admin@example.com
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=YOUR_ADMIN_PASSWORD
-HTTPS=false # turn this true for HTTPS
-HTTPS_KEY_PATH=./certs/localhost-key.pem # optional
-HTTPS_CERT_PATH=./certs/localhost.pem # optional
+npm ci
+cp .env.example .env
+npm run dev
 ```
 
-Generate a secure secret:
+### Frontend
+
 ```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+cd client
+npm ci
+cp .env.example .env
+npm run dev
 ```
 
-Frontend (`chat-api/.env`):
- ```env
-# HTTP development
+Default development configuration:
+
+```env
 VITE_API_URL=http://localhost:5000
 VITE_WS_URL=ws://localhost:5000
 VITE_HTTPS=false
-
-# HTTPS/WSS
-# VITE_API_URL=https://localhost:5000
-# VITE_WS_URL=wss://localhost:5000
-# VITE_HTTPS=true
 ```
 
-Never commit `.env` to Git.
+## Production HTTP deployment
 
-> **Note:** Never commit `.env` to Git.
+This project is intentionally configured to deploy using **HTTP and `ws://`**, not HTTPS/WSS.
 
----
+The recommended AWS path is:
 
-## Running the Application
-
-1. **Start MongoDB** (default: `mongodb://127.0.0.1:27017/chat-api`)
-
-2. **Start backend:**
-
-   ```bash
-   cd chat-api
-   npm run dev
-   ```
-
-Runs on `http://localhost:5000` (WS: `ws://localhost:5000/ws`)
-
-3. **Start frontend:**
-   ```bash
-   cd chat-api
-   npm run dev
-   ```
-4. **Health check:** `GET /health` → `{ "status": "ok", "service": "chat-api" }`
-   ## Authentication
-   JWT-based. Register or login to receive a token, then include it in requests:
-   
-    Authorization: Bearer JWT_TOKEN
-
-
-**Register:** POST `/api/auth/register`
-
-```json
-{ "username": "john", "email": "john@example.com", "password": "password123" }
+```text
+GitHub
+  -> GitHub Actions
+  -> AWS OIDC
+  -> S3 deployment artifact
+  -> AWS Systems Manager
+  -> EC2
+  -> Nginx :80
+  -> React + Node/WebSocket
+  -> MongoDB Atlas
 ```
-Login: `POST` `/api/auth/login`
 
-```json
-{ "email": "john@example.com", "password": "password123" }
+See `aws/README.md` for setup instructions.
+
+### Production environment
+
+Keep the backend environment file outside Git:
+
+```text
+/etc/chat-api.env
 ```
-## REST API
-## Users
-|Method	|Endpoint |	Description |
---------|---------|-------------|
-|GET	  |`/api/users/me`	|Get current user|
-|PATCH	|`/api/users/me` |	Update | username, email, password, or profile picture |
 
-## Friends
-|Method	|Endpoint |	Description |
---------|---------|-------------|
-| GET	| `/api/friends/search`	| Search users |
-| POST	| `/api/friends/requests`	|Send friend request |
-| GET	| `/api/friends/requests/incoming` |	Incoming requests |
-| POST	| `/api/friends/requests/:id/accept` |	Accept request |
-| POST	| `/api/friends/requests/:id/reject` |	Reject request |
-|GET	| `api/friends` |	List friends |
-## Conversations 
-|Method	|Endpoint |	Description |
-|--------|---------|-------------|
-| GET	|`/api/conversations` |	List user's conversations |
-| GET  |	`/api/conversations/:id` |	Get conversation |
-| POST	| `/api/conversations/direct` |	Open direct conversation |
-| GET	| ` /api/conversations/:id/messages`|Message history |
-## Groups
-|Method	|Endpoint |	Description |
-|--------|---------|-------------|
-| POST	| `/api/groups `	|Create group (min. 3 users; creator becomes ADMIN) |
-| PATCH	| `/api/groups/:id` |	Rename or change picture (admin only)|
-| DELETE | `	/api/groups/:id` |	Delete group (admin only) |
-| POST	| `/api/groups/:id/members`	| Add member (admin only) |
-|DELETE | `	/api/groups/:id/members/:userId` |	Remove member (admin only) |
-|PATCH |	`/api/groups/:id/members/:userId/admin` |	Promote to admin |
-| POST |	`/api/groups/:id/leave` |	Leave group |
-## Encryption Keys
-|Method	|Endpoint |	Description |
-|--------|---------|-------------|
-| PUT	| `/api/keys/public` |	Upload public key |
-| GET	| `/api/keys/conversation/:id` |	Get conversation member keys |
-## Broadcasts
-|Method	|Endpoint |	Description |
-|--------|---------|-------------|
-| GET	| `/api/broadcasts` |	Get persistent admin broadcasts |
+At minimum configure:
 
-## WebSocket API
-Endpoint: `ws://localhost:5000/ws` (or `wss://` with HTTPS)
-
-Authenticate with JWT on connect. Server responds with connection.ready.
-
-### Send message:
-```json
-{
-  "type": "message.send",
-  "data": {
-    "conversationId": "CONVERSATION_ID",
-    "payloadType": "text",
-    "payload": {
-      "text": "Hello!"
-    }
-  }
-}
+```env
+PORT=5000
+NODE_ENV=production
+MONGO_URI=...
+JWT_SECRET=...
+KEY_ENCRYPTION_SECRET=...
+ADMIN_EMAIL=...
+ADMIN_USERNAME=...
+ADMIN_PASSWORD=...
+CORS_ORIGIN=http://YOUR_SERVER_OR_DOMAIN
+TRUST_PROXY=true
+HTTPS=false
+VITE_API_URL=http://YOUR_SERVER_OR_DOMAIN
+VITE_WS_URL=ws://YOUR_SERVER_OR_DOMAIN
 ```
-### Subscribe/unsubscribe:
 
-```json
-{ "type": "conversation.subscribe", "data": { "conversationId": "ID" } }
-{ "type": "conversation.unsubscribe", "data": { "conversationId": "ID" } }
-```
-### Typing:
+Never commit real credentials.
 
-```json
-{ "type": "typing.start", "data": { "conversationId": "ID" } }
-{ "type": "typing.stop", "data": { "conversationId": "ID" } }
-```
-### Read receipt:
-```json
-{ "type": "message.read", "data": { "conversationId": "ID", "messageId": "ID" } }
-```
-## WebSocket Events
-|Category	|Events |
-|---------|-------|
-|Connection |	`connection.ready`
-|Messages	| `message.send`, `message.created`, `message.delivered`, `message.read`, `message.read.confirmed`
-|Conversations	| `conversation.subscribe`, `conversation.subscribed`, `conversation.unsubscribe`, `conversation.unsubscribed`
-|Friends	| `friend.request.received`, `friend.request.accepted`, `friend.request.rejected`
-|Groups	| `group.created`, `group.updated`, `group.deleted`, `group.member.added`, `group.member.removed`, `group.member.left`
-|Typing |	`typing.start`, `typing.stop`
-|Presence |	`presence.status`, `presence.online`, `presence.offline`
-|Broadcasts	| `admin.broadcast`, `admin.broadcast. confirmed`, `admin.broadcast.read`, `admin.broadcast.read.confirmed`
+## CI/CD
 
-The server uses ping/pong heartbeats to detect and terminate dead connections.
+`CI` runs on pull requests and pushes to `main`:
 
-### End-to-End Encryption
-Each browser generates a 3072-bit RSA-OAEP (SHA-256) key pair:
+- installs locked dependencies
+- runs backend tests
+- runs a production dependency audit
+- builds the frontend
 
-Private key → stored locally in IndexedDB
+`Deploy to AWS EC2` runs on pushes to `main` and:
 
-Public key → uploaded to server
+1. Creates a deployment archive without `.env`, `node_modules`, or `dist`.
+2. Uploads the archive to a private S3 bucket.
+3. Uses GitHub OIDC instead of long-lived AWS access keys.
+4. Uses AWS Systems Manager to tell the EC2 instance to retrieve the artifact.
+5. Installs dependencies and builds the frontend.
+6. Restarts the Node API through systemd.
+7. Reloads Nginx.
+8. Performs an API health check.
 
-#### Message flow:
+## Security
 
-- Generate a new AES-256-GCM key per message
+The project includes configurable CORS, Helmet, authentication rate limiting, request-size limits, WebSocket payload/rate limits, image validation, generalized production errors, and WebSocket authentication without placing the JWT in the URL.
 
-- Encrypt the message with AES
+See `SECURITY.md` for details.
 
-- Encrypt the AES key for each member with their RSA public key
+### Important HTTP limitation
 
-- Send to server → store in MongoDB → deliver via WebSocket
+HTTP/WS is **not encrypted in transit**. Login credentials, JWT authentication traffic, WebSocket traffic, API metadata, and the application itself can be observed or modified by a network attacker. Browser-side E2EE protects encrypted message contents, but it does not make HTTP a secure transport.
 
-- Recipient decrypts AES key with RSA, then decrypts the message
+For a real public production service, use HTTPS/WSS.
 
-- The server never receives private keys. See E2EE.md for details.
+## E2EE
 
-**Note:** *Private keys are browser/device-specific. Clearing browser storage loses the key. Multi-device key management is not implemented.*
+Messages use browser-side encryption. The server does not receive the user's private encryption key. See `E2EE.md` for the implementation and limitations.
 
-## Caching
-The client uses an in-memory read cache (~10 min TTL) for conversations, friend requests, and related data. WebSocket updates invalidate cached entries. The cache clears on auth context changes and does not replace MongoDB persistence.
+## MongoDB
 
-## Database Models
-| Model |	Purpose |
-|--------|--------|
-|User |	Username, email, password hash, profile picture, role
-|UserKey |	Public encryption key info
-|FriendRequest |	requester, recipient, status (`PENDING`/`ACCEPTED`/`REJECTED`)
-|Conversation |	Type (`DIRECT`/`GROUP`/`BROADCAST`), name, picture, creator
-|ConversationMember	 | User, role (`MEMBER`/`ADMIN`), last read info
-|Message |	Conversation, sender, type, payload, delivery info
-|Broadcast |	Persistent admin broadcasts
-|BroadcastRead |	Tracks broadcast read status per user
+The application uses MongoDB collections for users, keys, friend requests, conversations, members, messages, broadcasts, and broadcast reads. Dropping a collection removes its documents; MongoDB can recreate collections when the application writes data again, but deleted data is not automatically restored.
 
-## HTTPS and WSS
-Optional for local development; recommended for production.
+## License
 
-- HTTP dev: `HTTPS=false`, `VITE_API_URL=http://...`, `VITE_WS_URL=ws://...`
+Educational/development project.
 
-- HTTPS dev: `HTTPS=true` with cert paths, `VITE_API_URL=https://...`, `VITE_WS_URL=wss://...`
+## Testing
 
-For production, terminate TLS with a reverse proxy (Nginx, Caddy) and forward to Node.js
+The project includes automated backend and frontend tests, and the GitHub Actions CI workflow runs them before deployment.
 
-## Deployment
+### Backend tests
+
+From `chat-api/`:
+
 ```bash
-# Backend
-cd chat-api && npm run dev
-
-# Frontend
-cd client && npm run dev
-
-# Build frontend
-npm run build
-
-# Preview production build
-npm run preview
+npm test
+npm run test:coverage
 ```
+
+The backend suite covers health checks, authentication and validation, broadcast APIs/services, group administration and membership rules, message retrieval, WebSocket authentication/broadcast delivery, protected routes, security headers, and rate limiting.
+
+### Frontend tests
+
+From `client/`:
+
+```bash
+npm test
+```
+
+The frontend suite uses Node's built-in test runner and covers authentication state, local storage, user/token persistence, and browser-side E2EE encryption/key wrapping.
+
+### CI gate
+
+GitHub Actions runs:
+
+1. Backend tests
+2. Backend dependency audit
+3. Frontend tests
+4. Frontend dependency audit
+5. Frontend production build
+
+A failed test, build, or high-severity dependency audit stops the deployment workflow from proceeding.

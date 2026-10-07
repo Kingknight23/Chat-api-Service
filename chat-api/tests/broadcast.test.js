@@ -2,6 +2,7 @@ import request from "supertest";
 
 import app from "../src/app.js";
 import Broadcast from "../src/models/Broadcast.js";
+import { makeToken } from "./helpers.js";
 
 import {
     connectTestDatabase,
@@ -44,7 +45,7 @@ describe("Broadcast API", () => {
             .get("/api/broadcasts")
             .set(
                 "Authorization",
-                "Bearer 100"
+                `Bearer ${makeToken()}`
             );
 
         expect(response.statusCode)
@@ -94,7 +95,7 @@ describe("Broadcast API", () => {
             .get("/api/broadcasts")
             .set(
                 "Authorization",
-                "Bearer 100"
+                `Bearer ${makeToken()}`
             );
 
         expect(response.body.unreadCount)

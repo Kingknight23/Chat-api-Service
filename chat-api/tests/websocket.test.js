@@ -3,6 +3,7 @@ import WebSocket from "ws";
 
 import app from "../src/app.js";
 import Broadcast from "../src/models/Broadcast.js";
+import { makeToken } from "./helpers.js";
 
 import setupWebSocket from
     "../src/websocket/websocket.server.js";
@@ -91,8 +92,9 @@ describe("WebSocket API", () => {
 
         const socket =
             new WebSocket(
-                `ws://localhost:${port}/ws?token=100`
+                `ws://localhost:${port}/ws`
             );
+        socket.on("open", () => socket.send(JSON.stringify({ type: "auth", data: { token: makeToken() } })));
 
         const message =
             await waitForMessage(
@@ -121,8 +123,9 @@ describe("WebSocket API", () => {
 
         const socket =
             new WebSocket(
-                `ws://localhost:${port}/ws?token=100`
+                `ws://localhost:${port}/ws`
             );
+        socket.on("open", () => socket.send(JSON.stringify({ type: "auth", data: { token: makeToken() } })));
 
         const message =
             await waitForMessage(
@@ -169,8 +172,9 @@ describe("WebSocket API", () => {
 
         const socket =
             new WebSocket(
-                `ws://localhost:${port}/ws?token=100`
+                `ws://localhost:${port}/ws`
             );
+        socket.on("open", () => socket.send(JSON.stringify({ type: "auth", data: { token: makeToken() } })));
 
         await new Promise((resolve) => {
             const timeout =

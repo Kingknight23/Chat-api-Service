@@ -1,0 +1,158 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    margin: 0;
+
+    min-height: 100%;
+
+    width: 100%;
+}
+
+body {
+    background: var(--background);
+
+    color: var(--text-primary);
+
+    font-family:
+        Inter,
+        Arial,
+        sans-serif;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+input {
+    outline: none;
+}
+
+button:disabled {
+    cursor: not-allowed;
+
+    opacity: 0.6;
+}
+
+.brand-mark {
+    width: 52px;
+
+    height: 52px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #4F46E5,
+            #06B6D4
+        );
+
+    color: white;
+
+    font-size: 25px;
+}
+
+.eyebrow {
+    margin: 0;
+
+    color: var(--accent);
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    letter-spacing: 1.5px;
+}
+
+.muted {
+    color: var(--text-secondary);
+}
+
+.primary-button {
+    border: none;
+
+    border-radius: 10px;
+
+    padding: 12px 18px;
+
+    background: var(--primary);
+
+    color: white;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.primary-button:hover {
+    background: var(--primary-hover);
+}
+
+.app-button {
+    border: none;
+
+    padding: 10px 16px;
+
+    border-radius: 10px;
+}
+
+.loading {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    padding: 30px;
+
+    color: var(--text-secondary);
+}
+
+.loading-spinner {
+    width: 20px;
+
+    height: 20px;
+
+    border: 2px solid var(--border);
+
+    border-top-color: var(--accent);
+
+    border-radius: 50%;
+
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.empty-state {
+    padding: 25px;
+
+    text-align: center;
+
+    color: var(--text-secondary);
+}
+
+.empty-state h3 {
+    color: var(--text-primary);
+}

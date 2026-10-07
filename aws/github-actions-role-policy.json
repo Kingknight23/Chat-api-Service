@@ -1,0 +1,17 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "UploadDeploymentBundle",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject"],
+      "Resource": "arn:aws:s3:::<DEPLOY_BUCKET>/releases/*"
+    },
+    {
+      "Sid": "DeployViaSSM",
+      "Effect": "Allow",
+      "Action": ["ssm:SendCommand", "ssm:GetCommandInvocation"],
+      "Resource": "*"
+    }
+  ]
+}
