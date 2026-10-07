@@ -36,6 +36,7 @@ Express            WebSocket Server
             |
             v
         MongoDB
+```
 
 The browser performs message encryption/decryption before sending data to the server.
 
